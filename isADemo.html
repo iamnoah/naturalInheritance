@@ -1,0 +1,190 @@
+<html>
+<head>
+<title>Natural Inheritance</title>
+<style type="text/css">
+body {
+  font-family: arial,sans-serif;
+  margin: 3em 2em 3em 8em;
+}
+#footnotes {
+  font-size: .7em;
+}
+#footnotes dt, #footnotes dd { float: left; margin-top: 6px; }
+#footnotes dt { clear: left; width: 3em; } 
+#footnotes dd { clear: right; margin-left: 0em; }
+</style>
+<script type="text/javascript" src="isA.js"> </script>
+<script type="text/javascript" id="demoJs">
+// DEF Publication-Newspaper
+var Publication = isA.Class({ // isA.Class is just sugar for isA(null,arg);
+    init: function() { /* doSomethingIfThisWasntJustAnExample */ },
+    getName: function() { return this.named }
+});
+var Newspaper = isA(Publication,{
+    init: function() {
+        // if Simple JavaScript Inheritance were included, we could call this._super();
+        Publication.prototype.init.apply(this,arguments);
+    }
+});
+// DEF NYT
+var NYT = isA(new Newspaper,{ named: "The New York Times", locatedIn: "New York City" });
+// DEF may_15_NYT
+var may_15_NYT = isA(NYT,{ published: new Date("2009/05/15") });
+// DEF kindling
+var kindling = isA(may_15_NYT,{ locatedIn: "my firepit", status: "smoldering" });
+</script>
+</head>
+<body>
+
+<h1>Natural Inheritance</h1>
+<p>Most of the time when programmers talk about inheritance, they're refering to classical 
+inheritance. Classical inheritance is what we're all familiar with, and it's fairly easy to 
+understand. We're so used to it in fact, that we think nothing of the cludges that we use to
+force our natural mode of thinking into a classification model. Natural Inheritance is a 
+JavaScript implementation of the way our minds naturally organize concepts.</p>
+
+<h2>Classical Inheritance</h2>
+<p>The "classical" in "classical inheritance" is a bit of a double entendre. We mean both 
+"the conventional (classical) type of inheritance" and "inheritance that relies on the classification"
+of instances. This works fine for abstract concepts like "a Dog is an Animal" and "a Newspaper is a Publication",
+but cracks start to show the closer we get to concrete instances of a thing. For example, consider these 5 
+concepts<sup><a href="#footnote1">[1]</a></sup> in your mind:</p>
+<ol>
+ <li>a Publication</li>
+ <li>a Newspaper</li>
+ <li>The New York Times</li>
+ <li>The May 15th Edition of the New York Times</li>
+ <li>The 5/15 New York Times being used as kindling in my fire pit.</li>
+</ol>
+<p>Each concept is distinct in our minds, but is also an extension of the previous concepts. 
+How would we model these 5 concepts using classical inheritance?</p>
+<pre>
+// start with a general Publication class
+var Publication = Class.extend({ 
+    initialize: function() { /* doSomethingIfThisWasntJustAnExample */ },
+    getName: function() { return this.named; } 
+});
+// a Newspaper is an extension of the Publication concept
+var Newspaper = Class.extend(Publication,{ 
+    init: function() {        
+        this._super.apply(this,arguments);
+    },
+    getCity: function() { return this.locatedIn; } 
+});
+// The New York Times is an instance of a Newspaper, so far, so good
+var NYT = new Newspaper({ named: "The New York Times", locatedIn: "New York City" });
+// The May 15th NYT is an instance of The New York Times... er, now what?
+// I suppose we need another class...
+var DailyPaper = Class.extend({ // TODO should this extend Publication, Newspaper, or nothing? 
+  getNewspaper: function() {
+    return this.newspaper;
+  },
+  getPublicationDate: function() {
+    return this.publishedOn;
+  }
+}); 
+// there we go, now we can model this safely
+var May_15_NYT = new DailyPaper({ newspaper: NYT, publishedOn: new Date("2009/05/15") });
+// a few days later the May 15th NYT is used for kindling... How do we model that?
+var LocationStatusAwareObject = Class.extend({
+    getObject: function() { return this.object; },
+    getLocation: function() { return this.location; },
+    getStatus: function() { return this.status; }
+});
+var kindling = new LocationStatusAwareObject({
+    object: May_15_NYT,
+    location: "my firepit",
+    status: "smoldering"
+});
+</pre>
+<p>So the fruits of applying classical inheritance to everything are readily apparent. 
+We have 2 extra classes that maybe should or maybe shouldn't be somewhere in our class 
+hierarchy, and don't really match any of our five concepts directly. Also, if I want to know
+the name of the paper being used for my kindling, I now have 2 layers of indirection to wade
+through: <code>kindling.getObject().getNewspaper().getName()</code></p>
+<p><strong>*ahem*</strong> Surely there must be a more <em>natural</em> way to model these relationships!</p>
+
+<h2>Natural Inheritance</h2>
+<p>That's my cue to introduce the library, and by library I mean single<sup><a href="#footnote2">[2]</a></sup> 
+public function:</p>
+<pre>function isA(classOrObject,[methodsAndProperties]) { ... }</pre>
+<p><code>isA</code> is used wherever you have one concept that is a more specific version of 
+another. Whether that concept is implemented as a class or an object isn't important to <code>isA</code>.
+Let's see how we can express our five concepts now.</p>
+<noscript>Looks like you have JavaScript turned off (or NoScript). To keep things dry, the code snippets 
+below are copied from the actual JS source, so you'll either need to turn JS on or view the page source.</noscript>
+<pre id="Publication-Newspaper"> </pre>
+<p>Our Publication class is more or less the same, as is the Newspaper class. We can continute to 
+<code>isA(Newspaper,..)</code> and such to create whatever class hierarchy we want, but eventually we 
+will need to create an instance of one of these classes.</p>
+<pre id="NYT"> </pre>
+<p>Here we witness the founding of The New York Times. Since <code>new Newspaper</code>
+is an object, <code>isA</code> returns an object.</p>
+<pre id="may_15_NYT"> </pre>
+<p>Now the May 15th Times is published. If you examine the resulting Newspaper, you will see that it is named 
+(<code>may_15_NYT.named</code>) "The New York Times" and was published on May 15th 
+(<code>may_15_NYT.published</code>). We can rename it without changing the name of the paper in general, 
+as stored in <code>NYT</code>. e.g.,</p>
+<pre>may_15_NYT.named = "The New York Tymes";
+// NYT.named === "The New York Times"</pre>
+<p>I personally always change the i to a y in "Times" for that old tymey feel.</p>
+
+<a onblur="try {parent.deselectBloggerImageGracefully();} catch(e) {}" href="http://4.bp.blogspot.com/_ZS-2AgZmgD0/Sp7F5rl9REI/AAAAAAAABCc/aUfrogpwWwc/s1600-h/nytymes.png"><img style="margin: 0px auto 10px; display: block; text-align: center; cursor: pointer; width: 400px; height: 68px;" src="http://4.bp.blogspot.com/_ZS-2AgZmgD0/Sp7F5rl9REI/AAAAAAAABCc/aUfrogpwWwc/s400/nytymes.png" alt="" id="BLOGGER_PHOTO_ID_5376952599872095298" border="0" /></a>
+
+<p>A few days later, we have no use for the paper and it takes on the new concept of kindling:</p>
+<pre id="kindling"> </pre>
+
+<h2>Applications</h2>
+
+<p>I'll be the first to admit that natural inheritance can be scary. We're very comfortable with 
+the world of classes and at first glance a few ugly hack classes seem "safer" than this objects
+inheriting from objects voodoo. But there are some common problems that natural inheritance is 
+<em>naturally</em> suited to.</p>
+
+<h3>Revision History</h3>
+
+<p>Suppose you have an object that the user can edit, say a document. You want to offer a history, 
+so the user can see previous revisions and revert to one at anytime. A classical programmer is 
+reading this and already thinking of how to implement the Revision class, maybe with specialized 
+Change classes for each of the different types of edits that can be made. However, natural inheritance
+makes this problem almost trivial:</p>
+<pre>var history = {
+  revisions: [],
+  current: new MyObject(),
+  save: function() {
+    revisions.push(this.current);
+    this.current = isA(this.current);
+  },
+  revert: function(revisionNumber) {
+    this.current = isA(this.revisions[revisionNumber]);
+  }
+};</pre>
+<p><code>current</code> is always the working copy. <code>revisions</code> has an object for each
+version of the object for which save was called. </p>
+
+<h2>Footnotes</h2>
+<dl id="footnotes">
+    <dt><a name="footnote1">[1]</a></dt>
+    <dd>This list is slightly adapted from the book <a href="http://www.amazon.com/gp/product/0465026567?ie=UTF8&tag=noahsloancom-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0465026567">Godel, Escher, Bach: An Eternal Golden Braid</a><img src="http://www.assoc-amazon.com/e/ir?t=noahsloancom-20&l=as2&o=1&a=0465026567" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+    as is the basis of the concept of natural inheritance.</dd>
+    <dt><a name="footnote2">[2]</a></dt>
+    <dd>OK you got me, the isA function also has 2 utility functions members, but it's only one global variable. 
+    I'm only counting it as one, so get over it.</dd>
+</dl>
+
+<script type="text/javascript">
+// copy the code into pre elements
+(function() {
+  var $ = function(id) { return document.getElementById(id); };
+  var snips = {};
+  $('demoJs').innerHTML.replace(/\/\/ DEF (.*?)\n((?:.|[\r\n])*?)(?=$|\/\/ DEF)/g,function(s,id,snip) {
+    var el = $(id);
+    if(el) {
+        el.innerHTML = snip;
+    }
+  });
+})();
+</script>    
+
+</body>
+</html>
