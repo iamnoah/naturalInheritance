@@ -37,15 +37,15 @@ var kindling = isA(may_15_NYT,{ locatedIn: "my firepit", status: "smoldering" })
 <body>
 
 <h1>Natural Inheritance</h1>
-<p>Most of the time when programmers talk about inheritance, they're refering to classical 
+<p>Most of the time when programmers talk about inheritance, they're referring to classical 
 inheritance. Classical inheritance is what we're all familiar with, and it's fairly easy to 
-understand. We're so used to it in fact, that we think nothing of the cludges that we use to
+understand. We're so used to it in fact, that we think nothing of the kludges that we use to
 force our natural mode of thinking into a classification model. Natural Inheritance is a 
 JavaScript implementation of the way our minds naturally organize concepts.</p>
 
 <h2>Classical Inheritance</h2>
 <p>The "classical" in "classical inheritance" is a bit of a double entendre. We mean both 
-"the conventional (classical) type of inheritance" and "inheritance that relies on the classification"
+"the conventional (classical) type of inheritance" and "inheritance that relies on classification"
 of instances. This works fine for abstract concepts like "a Dog is an Animal" and "a Newspaper is a Publication",
 but cracks start to show the closer we get to concrete instances of a thing. For example, consider these 5 
 concepts<sup><a href="#footnote1">[1]</a></sup> in your mind:</p>
@@ -161,6 +161,27 @@ makes this problem almost trivial:</p>
 };</pre>
 <p><code>current</code> is always the working copy. <code>revisions</code> has an object for each
 version of the object for which save was called. </p>
+
+<h3>Change Sets</h3>
+
+<p>Our revision history also records the differences between neighboring 
+	revisions. Because each revision inherits from the one before it,
+	we can use <code>hasOwnProperty</code> to determine what properties
+	were changed:</p>
+<pre>
+/**
+ * Returns the property edits made in the given revision.
+ */
+history.diff(revision) {
+	var r = this.revisions[revision], changes = {};
+	for(var i in r) {
+		if(r.hasOwnProperty(i)) {
+			changes[i] = { 'new': r[i], old: r.prototype[i] };
+		}
+	}
+	return changes;
+};
+</pre>
 
 <h2>Footnotes</h2>
 <dl id="footnotes">
